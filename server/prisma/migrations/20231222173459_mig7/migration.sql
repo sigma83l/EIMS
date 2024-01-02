@@ -1,0 +1,2 @@
+-- CreateEnum
+CREATE TYPE "WorkingFields" AS ENUM ('TECHNOLOGY', 'BUSINESS', 'FIELD1', 'FIELD2', 'FIELD3');

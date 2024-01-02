@@ -1,0 +1,190 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum DepartmentNames {
+  DEPARTMENT1
+  DEPARTMENT2
+  DEPARTMENT3
+}
+
+enum WorkingFields {
+  TECHNOLOGY
+  BUSINESS
+  FIELD1
+  FIELD2
+  FIELD3
+}
+
+enum Scores {
+  POOR
+  FAIR
+  GOOD
+  EXCELLENT
+}
+
+model CoordinatorAssessment {
+  id                                  Int                     @id @default(autoincrement())
+  qualityOfStudentInternshipReport    Scores                  @default(GOOD)
+  experienceGained                    Scores                  @default(GOOD)
+  presentation                        Scores                  @default(GOOD)
+  visualPresentationAid               Scores                  @default(GOOD)
+  overalAssessmentResult              Scores                  @default(GOOD)
+  studentId                           Int                     @unique
+  coordinatorId                       Int                     @unique
+  student                             Student?
+  coordinator                         Coordinator?            @relation(fields: [coordinatorId], references: [id])
+}
+
+model SuperviserAssessment {
+  id                                  Int                     @id @default(autoincrement())
+  qualityOfStudentInternshipReport    Scores                  @default(GOOD)
+  experienceGained                    Scores                  @default(GOOD)
+  presentation                        Scores                  @default(GOOD)
+  visualPresentationAid               Scores                  @default(GOOD)
+  overalAssessmentResult              Scores                  @default(GOOD)
+  studentId                           Int                     @unique
+  superviserId                        Int                     @unique
+  student                             Student?
+  superviser                          Superviser?             @relation(fields: [superviserId], references: [id])
+}
+
+model User {
+  id                    Int                     @id @default(autoincrement())
+  firstname             String                  @db.VarChar(255)
+  lastname              String                  @db.VarChar(255)
+  email                 String                  @unique @db.VarChar(255)
+  role                  Role                    @default(user)
+  hashedPassword        String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt            
+  hashedRT              String?
+  lastLoggedInTime      DateTime?
+  phone                 String?
+  image                 Image?
+  student               Student?
+  coordinator           Coordinator?
+  supervisor            Superviser?
+}
+
+
+model Student {
+  id                    Int                     @id @default(autoincrement())
+  userId                Int                     @unique
+  departmentId          Int                     @unique
+  email                 String                  @unique
+  studentNumber         Int
+  applications          Application[]       
+  cassessmentId         Int                     @unique
+  sassessmentId         Int                     @unique
+  cassessment           CoordinatorAssessment?  @relation(fields: [cassessmentId], references: [id])     
+  sassessment           SuperviserAssessment?   @relation(fields: [sassessmentId], references: [id])     
+  department            Department              @relation(fields: [departmentId], references: [id])
+  user                  User                    @relation(fields: [userId], references: [id])
+}
+
+model Department {
+  id                    Int                     @id @default(autoincrement())
+  name                  DepartmentNames 
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt     
+  coordinator           Coordinator?
+  students              Student[]               
+}
+
+model Superviser {
+  id                    Int                     @id @default(autoincrement())
+  userId                Int                     @unique
+  email                 String                  @unique
+  position              String
+  companyId             Int
+  assessment            SuperviserAssessment?   
+  company               Company                 @relation(fields:[companyId], references:[id])
+  user                  User                    @relation(fields: [userId], references: [id])
+  coordinatorId         Int                     
+  coordinator           Coordinator             @relation(fields: [coordinatorId], references: [id])
+}
+
+model Coordinator {
+  id                    Int                     @id @default(autoincrement())
+  userId                Int                     @unique
+  email                 String                  @unique
+  departmentId          Int?                    @unique
+  assessment            CoordinatorAssessment?
+  department            Department?             @relation(fields: [departmentId], references: [id])
+  user                  User                    @relation(fields: [userId], references: [id])
+  supervisers           Superviser[]    
+}
+
+
+model Application {
+  id                    Int                     @id @default(autoincrement())
+  studentId             Int                     @unique
+  resumeId              Int                     @unique
+  name                  String
+  days                  Int
+  email                 String                  
+  insurance             Image?
+  cyprus                Boolean?                @default(false)
+  isApproved            Boolean                 @default(false)
+  resume                Resume                  @relation(fields: [resumeId], references: [id])
+  student               Student                 @relation(fields:[studentId], references:[id])
+}
+
+model Company {
+  id                    Int                     @id @default(autoincrement())
+  workingFields         WorkingFields[]                                                      
+  postalAddr            Int
+  fax                   Int?        
+  telephoneNumber       String
+  email                 String
+  webAddr               String
+  description           String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt 
+  superviser            Superviser[]
+}
+
+model Verification {
+  id                    Int                     @id @default(autoincrement())
+  email                 String                  @unique
+  try                   Int                     @default(0)
+  code                  String
+  lastResendTime        DateTime
+}
+
+model Image {
+  id                    Int                     @id @default(autoincrement())
+  name                  String
+  userId                Int                     @unique
+  applicationId         Int                     @unique
+  createdAt             DateTime
+  updatedAt             DateTime
+  isVerified            Boolean                 @default(false)
+  size                  Int                     @default(0)
+  user                  User?                   @relation(fields: [userId], references: [id])
+  application           Application?            @relation(fields: [applicationId], references: [id])
+}
+
+model Resume {
+  id                    Int                     @id @default(autoincrement())
+  name                  String
+  isVerified            Boolean                 @default(false)
+  createdAt             DateTime
+  updatedAt             DateTime
+  size                  Int                     @default(0)
+  application           Application?           
+}
